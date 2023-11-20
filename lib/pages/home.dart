@@ -162,7 +162,11 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.black.withOpacity(0.05),
                   ),
                   child: DropdownButton(
-                    value: cities.isNotEmpty ? cities[0] : 'Loading...',
+                    value: selectedCity.isNotEmpty
+                        ? selectedCity
+                        : cities.isNotEmpty
+                            ? cities[0]
+                            : 'Loading...',
                     isExpanded: true,
                     icon: Container(),
                     autofocus: false,
@@ -202,8 +206,10 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       child: selectedCity == connectionInfo['city']
-                          ? const Text('Disconnect', style: TextStyle(fontSize: 16))
-                          : const Text('Connect', style: TextStyle(fontSize: 16))),
+                          ? const Text('Disconnect',
+                              style: TextStyle(fontSize: 16))
+                          : const Text('Connect',
+                              style: TextStyle(fontSize: 16))),
                 )
               ],
             ),
@@ -247,8 +253,9 @@ class _HomePageState extends State<HomePage> {
                       )
                     : Icon(
                         Icons.location_on,
-                        color:
-                            mapAPIKey == '' ? Colors.black : const Color(0xffFF7059),
+                        color: mapAPIKey == ''
+                            ? Colors.black
+                            : const Color(0xffFF7059),
                         size: 48,
                       ),
               ),
