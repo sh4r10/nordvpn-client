@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:nordvpn_client/models/country.dart';
+import 'package:nordvpn_client/pages/countries.dart';
 import 'package:nordvpn_client/services/connection.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:nordvpn_client/services/location.dart';
+import 'package:nordvpn_client/services/storage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,10 +18,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isConnected = false;
-  String selectedCountry = '';
+  Country selectedCountry = Country('');
   String selectedCity = '';
-  List<String> countries = [];
+  List<Country> countries = [];
   List<String> cities = [];
+  String mapAPIKey = '';
+
   Map<String, String> connectionInfo = {};
   (double, double) coordinates = (0.0, 0.0);
   final MapController mapController = MapController();
@@ -28,32 +34,34 @@ class _HomePageState extends State<HomePage> {
         connectionInfo = value;
         isConnected = value['status'] == 'Connected';
         selectedCity = value['city'] ?? selectedCity;
-        selectedCountry = value['country'] ?? selectedCountry;
+        selectedCountry = Country(value['country'] ?? selectedCountry.name);
       });
-      getCities(selectedCountry);
+      getCities(selectedCountry.name);
     });
   }
 
   void getCities(String? country) {
     setState(() {
-      selectedCountry = country ?? selectedCountry;
+      selectedCountry = Country(country ?? selectedCountry.name);
     });
-    ConnectionService.getCities(selectedCountry).then((value) {
+
+    ConnectionService.getCities(selectedCountry.name).then((value) {
       setState(() {
         cities = value;
         selectedCity = value[0];
       });
-      LocationService.getCityCoords(value[0], selectedCountry).then((value) {
+      LocationService.getCityCoords(value[0], selectedCountry.name)
+          .then((value) {
         setState(() {
           coordinates = value;
         });
-        mapController.move(LatLng(value.$1, value.$2), 15);
+        mapController.move(LatLng(value.$1, value.$2), 7);
       });
     });
   }
 
   void connect() {
-    ConnectionService.connect(selectedCountry, selectedCity)
+    ConnectionService.connect(selectedCountry.name, selectedCity)
         .then((value) => {updateConnection()});
   }
 
@@ -62,7 +70,8 @@ class _HomePageState extends State<HomePage> {
     if (selectedCity == connectionInfo['city']) {
       success = await ConnectionService.disconnect();
     } else {
-      success = await ConnectionService.connect(selectedCountry, selectedCity);
+      success =
+          await ConnectionService.connect(selectedCountry.name, selectedCity);
     }
     setState(() {
       isConnected = success ? !isConnected : isConnected;
@@ -70,13 +79,31 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> displayCountries() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CountriesPage(countries: countries),
+      ),
+    );
+    if (result != null && result != '') {
+      getCities(result);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    // TODO: remove this line later
+    StorageService.getString('mapAPIKey').then((value) {
+      setState(() {
+        mapAPIKey = '';
+      });
+    });
 
     LocationService.getRecommendedConnection().then((value) {
       setState(() {
-        selectedCountry = value.$1;
+        selectedCountry = Country(value.$1);
         selectedCity = value.$2;
       });
       getCities(value.$1);
@@ -84,7 +111,7 @@ class _HomePageState extends State<HomePage> {
 
     ConnectionService.getCountries().then((value) {
       setState(() {
-        countries = value;
+        countries = createCountryModels(value);
       });
       updateConnection();
     });
@@ -97,35 +124,89 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           mapView(context),
-          Column(
-            children: [
-              DropdownSearch<String>(
-                items: countries,
-                selectedItem: selectedCountry,
-                onChanged: (value) => getCities(value),
-              ),
-              DropdownSearch<String>(
-                items: cities,
-                selectedItem: selectedCity,
-                onChanged: (value) => selectedCity = value ?? selectedCity,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                  onPressed: toggleConnect,
-                  style: ElevatedButton.styleFrom(
-                    maximumSize: const Size(150, 50),
-                    minimumSize: const Size(150, 50),
-                    padding: const EdgeInsets.all(15),
-                    backgroundColor:
-                        selectedCity == connectionInfo['city'] ? Colors.black : const Color(0xff3E5FFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: Column(
+              children: [
+                Builder(builder: (context) {
+                  return Container(
+                    decoration: const BoxDecoration(shape: BoxShape.circle),
+                    child: TextButton(
+                      onPressed: displayCountries,
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.black.withOpacity(0.05),
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.all(20),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            selectedCountry.flag,
+                            width: 18,
+                            height: 18,
+                          ),
+                          Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Text(selectedCountry.name,
+                                  style: const TextStyle(fontSize: 16))),
+                        ],
+                      ),
                     ),
+                  );
+                }),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.05),
                   ),
-                  child: selectedCity == connectionInfo['city']
-                      ? const Text('Disconnect')
-                      : const Text('Connect'))
-            ],
+                  child: DropdownButton(
+                    value: cities.isNotEmpty ? cities[0] : 'Loading...',
+                    isExpanded: true,
+                    icon: Container(),
+                    autofocus: false,
+                    focusColor: Colors.transparent,
+                    underline: Container(),
+                    items: cities.map<DropdownMenuItem<String>>((value) {
+                      return DropdownMenuItem(
+                          value: value,
+                          child: Center(
+                            child: Text(
+                              value,
+                              textAlign: TextAlign.center,
+                            ),
+                          ));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCity = value ?? '';
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  child: ElevatedButton(
+                      onPressed: toggleConnect,
+                      style: ElevatedButton.styleFrom(
+                        maximumSize: const Size(150, 50),
+                        minimumSize: const Size(150, 50),
+                        padding: const EdgeInsets.all(15),
+                        backgroundColor: selectedCity == connectionInfo['city']
+                            ? Colors.black
+                            : const Color(0xff3E5FFF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      child: selectedCity == connectionInfo['city']
+                          ? const Text('Disconnect', style: TextStyle(fontSize: 16))
+                          : const Text('Connect', style: TextStyle(fontSize: 16))),
+                )
+              ],
+            ),
           ),
         ],
       ),
@@ -135,49 +216,55 @@ class _HomePageState extends State<HomePage> {
 
   SizedBox mapView(BuildContext context) {
     return SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: 400,
-          child: FlutterMap(
-            mapController: mapController,
-            options: const MapOptions(
-                maxZoom: 15,
-                minZoom: 5,
-                keepAlive: true,
-                interactionOptions: InteractionOptions(
-                  flags: InteractiveFlag.pinchZoom |
-                      InteractiveFlag.drag |
-                      InteractiveFlag.scrollWheelZoom,
-                )),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: LatLng(coordinates.$1, coordinates.$2),
-                    child: selectedCity == connectionInfo['city']
-                        ? const Icon(
-                            Icons.location_on,
-                            color: Color(0xff3E5FFF),
-                            size: 48,
-                          )
-                        : const Icon(
-                            Icons.location_on,
-                            color: Colors.black,
-                            size: 48,
-                          ),
-                  ),
-                ],
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: FlutterMap(
+        mapController: mapController,
+        options: const MapOptions(
+            maxZoom: 17,
+            minZoom: 4,
+            keepAlive: true,
+            interactionOptions: InteractionOptions(
+              flags: InteractiveFlag.pinchZoom |
+                  InteractiveFlag.drag |
+                  InteractiveFlag.scrollWheelZoom,
+            )),
+        children: [
+          TileLayer(
+            urlTemplate: mapAPIKey != ''
+                ? 'https://maps.geoapify.com/v1/tile/dark-matter/{z}/{x}/{y}.png?apiKey=$mapAPIKey'
+                : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: LatLng(coordinates.$1, coordinates.$2),
+                child: selectedCity == connectionInfo['city']
+                    ? const Icon(
+                        Icons.location_on,
+                        color: Color(0xff3E5FFF),
+                        size: 48,
+                      )
+                    : Icon(
+                        Icons.location_on,
+                        color:
+                            mapAPIKey == '' ? Colors.black : const Color(0xffFF7059),
+                        size: 48,
+                      ),
               ),
             ],
           ),
-        );
+        ],
+      ),
+    );
   }
 
   AppBar connectionBar() {
     return AppBar(
       backgroundColor: isConnected ? const Color(0xff1fa302) : Colors.black,
+      actions: [
+        Container(),
+      ],
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
