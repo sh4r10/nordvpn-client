@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:nordvpn_client/pages/countries.dart';
 import 'package:nordvpn_client/pages/home.dart';
 import 'package:nordvpn_client/pages/login.dart';
+import 'package:nordvpn_client/pages/settings.dart';
 import 'package:nordvpn_client/services/account.dart';
 import 'package:window_size/window_size.dart';
 
@@ -38,6 +38,7 @@ class NordVPN extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginPage(),
           '/home': (context) => const HomePage(),
+          '/settings': (context) => const SettingsPage(),
         });
   }
 }

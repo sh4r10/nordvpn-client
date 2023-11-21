@@ -10,10 +10,12 @@ class CountriesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Countries', style: TextStyle(fontSize: 16)),
         leading: IconButton(
           onPressed: () => Navigator.pop(context, ''),
           icon: const Icon(Icons.arrow_back),
         ),
+        backgroundColor: const Color(0xff3E5FFF),
       ),
       body: Center(
         child: ListView.builder(
@@ -39,6 +41,5 @@ class CountriesPage extends StatelessWidget {
         ),
       ),
     );
-    ;
   }
 }

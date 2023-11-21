@@ -65,14 +65,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
-  dropdown_search:
-    dependency: "direct main"
-    description:
-      name: dropdown_search
-      sha256: "55106e8290acaa97ed15bea1fdad82c3cf0c248dd410e651f5a8ac6870f783ab"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.6"
   fake_async:
     dependency: transitive
     description:
@@ -320,6 +312,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
+  settings_ui:
+    dependency: "direct main"
+    description:
+      name: settings_ui
+      sha256: d9838037cb554b24b4218b2d07666fbada3478882edefae375ee892b6c820ef3
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   shared_preferences:
     dependency: "direct main"
     description:

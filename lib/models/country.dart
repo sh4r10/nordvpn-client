@@ -6,7 +6,7 @@ class Country {
 
   Country(String givenName) {
     name = givenName;
-    flag = 'assets/flags/${underscore(name.toLowerCase())}.svg';
+    flag = 'assets/flags/${name != '' ? underscore(name.toLowerCase()) : 'default'}.svg';
   }
 
   factory Country.fromJson(Map<String, dynamic> json) {
