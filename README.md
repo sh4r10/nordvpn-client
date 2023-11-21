@@ -54,11 +54,15 @@ As the project is only supported on linux, use the command
 This will create the following directories  
 `build/linux/[arch]/release/bundle`
 
+You may need to provide executeable permissions  
+`chmod +x nordvpn_client`
+
 The bundle directory requires everything needed to run the project, cd into it and run  
 `./nordvpn_client`
 
 ## Contributions
-Contributions of all kind are welcome, please create an issue if one does not already exist.
+Contributions of all kind are welcome, please create an issue if one does not already exist.  
+The project uses [semantic versioning](https://semver.org/).
 
 ## License
 The project is licensed under the [MIT License](LICENSE.md).
