@@ -1,6 +1,9 @@
 name: Flutter build for linux
 
-on: push
+on: 
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,5 +30,5 @@ jobs:
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: linux-build
-        path: build/linux
+        name: nordvpn-client
+        path: build/linux/x64/release/bundle
