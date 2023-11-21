@@ -19,7 +19,7 @@ I am in no way, shape or form affiliated with nordvpn. This is a hobby project w
 
 Connected         |  Disconnected
 :-------------------------:|:-------------------------:
-![](assets/images/disconnected.png)  |  ![](assets/images/connected.png)
+![](assets/images/connected.png)  |  ![](assets/images/disconnected.png)
 
 
 Countries         |  Settings
